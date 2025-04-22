@@ -56,16 +56,15 @@ func NewDHCPServer(config DHCPServerConfig) (DHCPServer, error) {
 // Start initializes and runs the DHCP server
 func (s *SimpleDHCPServer) Start() error {
 	// Bind to DHCP server port (67)
-	addr, err := net.ResolveUDPAddr("udp", "0.0.0.0:67")
+	addr, err := net.ResolveUDPAddr("udp4", s.config.ServerIP+":67")
 	if err != nil {
 		return fmt.Errorf("failed to resolve address: %w", err)
 	}
 
-	s.conn, err = net.ListenUDP("udp", addr)
+	s.conn, err = net.ListenUDP("udp4", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on port 67: %w", err)
 	}
-
 	// Configure socket for broadcast and bind to specific interface
 	f, err := s.conn.File()
 	if err == nil {
@@ -74,7 +73,7 @@ func (s *SimpleDHCPServer) Start() error {
 		syscall.SetsockoptString(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, s.config.InterfaceName)
 	}
 
-	log.Printf("DHCP: Server listening on %s:67", s.config.InterfaceName)
+	log.Printf("DHCP: Server listening on %s:67", s.config.ServerIP)
 
 	// Start the packet processing loop in a goroutine
 	go s.processPackets()
