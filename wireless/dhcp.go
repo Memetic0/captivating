@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"runtime"
 	"syscall"
 	"time"
+	"unsafe"
 )
 
 // DHCPServer interface defines the methods a DHCP server should implement
@@ -69,8 +71,22 @@ func (s *SimpleDHCPServer) Start() error {
 	f, err := s.conn.File()
 	if err == nil {
 		defer f.Close()
-		syscall.SetsockoptInt(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
-		syscall.SetsockoptString(int(f.Fd()), syscall.SOL_SOCKET, syscall.SO_BINDTODEVICE, s.config.InterfaceName)
+		syscall.SetsockoptInt(syscall.Handle(f.Fd()), syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
+
+		// Bind to specific interface
+		if runtime.GOOS == "linux" {
+			// Linux-specific code to bind to interface
+			interfaceNameBytes := []byte(s.config.InterfaceName)
+			// SO_BINDTODEVICE constant value is 25 on Linux
+			const SO_BINDTODEVICE = 25
+			err = syscall.Setsockopt(syscall.Handle(f.Fd()), syscall.SOL_SOCKET, SO_BINDTODEVICE,
+				(*byte)(unsafe.Pointer(&interfaceNameBytes[0])), int32(len(interfaceNameBytes)))
+			if err != nil {
+				log.Printf("DHCP: Warning: failed to bind to interface %s: %v", s.config.InterfaceName, err)
+				// Depending on policy, you might want to return an error here
+				// For now, we'll just log a warning and continue
+			}
+		}
 	}
 
 	log.Printf("DHCP: Server listening on %s:67", s.config.ServerIP)

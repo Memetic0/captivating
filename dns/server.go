@@ -19,7 +19,7 @@ func NewServer(port int, portalIP string) *Server {
 // Start begins listening for DNS requests
 func (s *Server) Start() error {
 	log.Printf("DNS: Starting server on port %d", s.port)
-	addr := &net.UDPAddr{Port: s.port, IP: s.portalIP}
+	addr := &net.UDPAddr{Port: s.port, IP: net.IPv4zero} // Listen on all available IPv4 interfaces
 	var err error
 	s.conn, err = net.ListenUDP("udp4", addr)
 	if err != nil {
@@ -27,7 +27,7 @@ func (s *Server) Start() error {
 		return fmt.Errorf("failed to start DNS server: %v", err)
 	}
 
-	log.Printf("DNS: Server listening on %s:%d", s.portalIP, s.port)
+	log.Printf("DNS: Server listening on 0.0.0.0:%d (portal IP for responses: %s)", s.port, s.portalIP.String())
 	go s.serve()
 	return nil
 }
