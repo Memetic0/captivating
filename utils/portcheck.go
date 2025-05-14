@@ -21,7 +21,7 @@ type PortInfo struct {
 func IsPortInUse(port int) (bool, string, int, error) {
 	// First check TCP port
 	tcpAddr := net.TCPAddr{Port: port}
-	tcpConn, tcpErr := net.ListenTCP("tcp", &tcpAddr)
+	tcpConn, tcpErr := net.ListenTCP("tcp4", &tcpAddr)
 
 	// If we can listen, the port is free
 	if tcpErr == nil {
@@ -29,7 +29,7 @@ func IsPortInUse(port int) (bool, string, int, error) {
 
 		// Also check UDP, as some services might only use UDP
 		udpAddr := net.UDPAddr{Port: port}
-		udpConn, udpErr := net.ListenUDP("udp", &udpAddr)
+		udpConn, udpErr := net.ListenUDP("udp4", &udpAddr)
 
 		if udpErr == nil {
 			udpConn.Close()

@@ -56,12 +56,12 @@ func NewDHCPServer(config DHCPServerConfig) (DHCPServer, error) {
 // Start initializes and runs the DHCP server
 func (s *SimpleDHCPServer) Start() error {
 	// Bind to DHCP server port (67)
-	addr, err := net.ResolveUDPAddr("udp", "0.0.0.0:67")
+	addr, err := net.ResolveUDPAddr("udp4", "0.0.0.0:67")
 	if err != nil {
 		return fmt.Errorf("failed to resolve address: %w", err)
 	}
 
-	s.conn, err = net.ListenUDP("udp", addr)
+	s.conn, err = net.ListenUDP("udp4", addr)
 	if err != nil {
 		return fmt.Errorf("failed to listen on port 67: %w", err)
 	}
@@ -159,7 +159,7 @@ func (s *SimpleDHCPServer) processPackets() {
 			log.Printf("DHCP: Received DISCOVER from %s", macStr)
 
 			// Assign an IP address
-			assignedIP := net.IP{}
+			var assignedIP net.IP
 			if ip, ok := s.leases[macStr]; ok {
 				// Use existing lease if client has one
 				assignedIP = ip
@@ -356,6 +356,15 @@ func buildDHCPMessage(
 	packet[pos+1] = byte(len(domainName)) // Length
 	copy(packet[pos+2:], domainName)      // Value
 	pos += 2 + len(domainName)
+
+	// Option 114: Captive Portal URI (RFC 8910)
+	// The URI should point to the captive portal API or landing page.
+	// Using the server IP (siaddr) as the host for the URI.
+	captivePortalURI := fmt.Sprintf("http://%s/", siaddr.String())
+	packet[pos] = 114                           // Option code
+	packet[pos+1] = byte(len(captivePortalURI)) // Length
+	copy(packet[pos+2:], captivePortalURI)      // Value
+	pos += 2 + len(captivePortalURI)
 
 	// Option 255: End
 	packet[pos] = 255

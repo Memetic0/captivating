@@ -29,7 +29,6 @@ func GetHttpsOnlyDomains() []string {
 
 		// Apple services
 		"apple.com", "www.apple.com", "icloud.com", "www.icloud.com",
-		"captive.apple.com",
 
 		// Social media
 		"facebook.com", "www.facebook.com", "twitter.com", "www.twitter.com",
@@ -41,8 +40,5 @@ func GetHttpsOnlyDomains() []string {
 
 		// CDNs
 		"cloudfront.net", "akamaiedge.net", "googleapis.com", "gstatic.com",
-
-		// Captive portal detection domains should bypass redirection
-		"captive.apple.com", "connectivitycheck.gstatic.com", "detectportal.firefox.com",
 	}
 }
